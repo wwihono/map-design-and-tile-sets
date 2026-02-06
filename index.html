@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Four Tilesets</title>
+  <title>Lab 4 — Four Tilesets</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
@@ -53,4 +53,92 @@
       <div class="group-title">Thematic layers (Tileset 2)</div>
       <label><input type="checkbox" id="toggleThematic" checked> Show thematic tileset</label>
       <div class="legend">
-        <div><span class="swatch" style
+        <div><span class="swatch" style="background:#2b8cbe"></span> Thematic features</div>
+      </div>
+      <p style="margin-top:8px;">
+        When thematic is ON over the basemap, that is your “Tileset 3: Combined map”.
+      </p>
+    </div>
+  </div>
+
+<script>
+  mapboxgl.accessToken = "YOUR_PUBLIC_TOKEN";
+
+  const STYLES = {
+    base:  "mapbox://styles/YOUR_USERNAME/YOUR_BASEMAP_STYLE_ID",
+    theme: "mapbox://styles/YOUR_USERNAME/YOUR_THEME_STYLE_ID"
+  };
+
+  // Your thematic tileset (Tileset 2)
+  const THEMATIC = {
+    sourceId: "thematic-src",
+    tilesetUrl: "mapbox://YOUR_USERNAME.YOUR_TILESET_ID",
+    sourceLayer: "YOUR_SOURCE_LAYER_NAME", // from Studio tileset layer name
+    layerId: "thematic-layer",
+    type: "circle" // change to "fill" or "line" if polygon/line
+  };
+
+  const map = new mapboxgl.Map({
+    container: "map",
+    style: STYLES.base,
+    center: [-122.3035, 47.6553], // change to your bbox center
+    zoom: 12
+  });
+
+  map.addControl(new mapboxgl.NavigationControl(), "top-right");
+  map.addControl(new mapboxgl.ScaleControl({ maxWidth: 120, unit: "imperial" }));
+  map.addControl(new mapboxgl.AttributionControl({ compact: true }));
+
+  function addThematicLayerIfMissing() {
+    // Add source if missing
+    if (!map.getSource(THEMATIC.sourceId)) {
+      map.addSource(THEMATIC.sourceId, {
+        type: "vector",
+        url: THEMATIC.tilesetUrl
+      });
+    }
+
+    // Add layer if missing
+    if (!map.getLayer(THEMATIC.layerId)) {
+      map.addLayer({
+        id: THEMATIC.layerId,
+        type: THEMATIC.type,
+        source: THEMATIC.sourceId,
+        "source-layer": THEMATIC.sourceLayer,
+        paint: {
+          "circle-radius": 5,
+          "circle-opacity": 0.85
+        }
+      });
+    }
+  }
+
+  function setThematicVisibility(isVisible) {
+    const vis = isVisible ? "visible" : "none";
+    if (map.getLayer(THEMATIC.layerId)) {
+      map.setLayoutProperty(THEMATIC.layerId, "visibility", vis);
+    }
+  }
+
+  // Whenever a style loads/reloads (including after setStyle), re-add thematic
+  map.on("style.load", () => {
+    addThematicLayerIfMissing();
+    const checked = document.getElementById("toggleThematic").checked;
+    setThematicVisibility(checked);
+  });
+
+  // Basemap switcher
+  document.querySelectorAll("input[name='basemap']").forEach(r => {
+    r.addEventListener("change", (e) => {
+      map.setStyle(STYLES[e.target.value]);
+    });
+  });
+
+  // Thematic checkbox
+  document.getElementById("toggleThematic").addEventListener("change", (e) => {
+    addThematicLayerIfMissing();
+    setThematicVisibility(e.target.checked);
+  });
+</script>
+</body>
+</html>
